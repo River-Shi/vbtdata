@@ -2,8 +2,13 @@ import vectorbtpro as vbt
 import pickle as pkl
 import os
 
-os.makedirs("spot", exist_ok=True)
-os.makedirs("swap", exist_ok=True)
+download_path = '/mnt/h/Crypto_data/okx'
+
+spot_path = os.path.join(download_path, 'spot')
+swap_path = os.path.join(download_path, 'swap')
+
+os.makedirs(spot_path, exist_ok=True)
+os.makedirs(swap_path, exist_ok=True)
 
 # def extract_info(info):
 #     info_list = []
@@ -59,25 +64,28 @@ print(f"Number of Swap Symbols: {len(info_swap)}")
 
 for info in info_spot:
     
-    try:
-        id = info['id']
-        start = info['availableSince']
-        end = info['availableTo']
-        
-        data = vbt.CCXTData.fetch_symbol(
-            symbol=id,
-            exchange="okx",
-            start=start,
-            timeframe="1m",
-            retries=5,
-            tz='UTC',
-            show_progress=True,
-        )
 
+    id = info['id']
+    start = info['availableSince']
+    end = info['availableTo']
+    try:   
         save_id = id.replace('/', '-')
-        save_path = f"spot/{save_id}.parquet"
-        df = data[0]
-        df.to_parquet(save_path)
+        save_path = os.path.join(spot_path, f"{save_id}.parquet")
+        
+        if not os.path.exists(save_path):
+            data = vbt.CCXTData.fetch_symbol(
+                symbol=id,
+                exchange="okx",
+                start=start,
+                timeframe="1m",
+                retries=5,
+                tz='UTC',
+                show_progress=True,
+            )
+
+
+            df = data[0]
+            df.to_parquet(save_path)
     except Exception as e:
         print(f"Error fetching {id}: {e}")
 
@@ -87,20 +95,23 @@ for info in info_swap:
     end = info['availableTo']
     
     try:
-        data = vbt.CCXTData.fetch_symbol(
-            symbol=f"{id}:USDT",
-            exchange="okx",
-            start=start,
-            timeframe="1m",
-            retries=5,
-            tz='UTC',
-            show_progress=True,
-        )
-
         save_id = id.replace('/', '-')
         save_id = f"{save_id}-SWAP"
-        save_path = f"swap/{save_id}.parquet"
-        df = data[0]
-        df.to_parquet(save_path)
+        save_path = os.path.join(swap_path, f"{save_id}.parquet")
+
+        if not os.path.exists(save_path):
+            data = vbt.CCXTData.fetch_symbol(
+                symbol=f"{id}:USDT",
+                exchange="okx",
+                start=start,
+                timeframe="1m",
+                retries=5,
+                tz='UTC',
+                show_progress=True,
+            )
+
+
+            df = data[0]
+            df.to_parquet(save_path)
     except Exception as e:
         print(f"Error fetching {id}: {e}")
